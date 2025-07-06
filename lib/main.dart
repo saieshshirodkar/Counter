@@ -547,9 +547,11 @@ class _CounterListScreenState extends State<CounterListScreen> {
           ? const CircleBorder()
           : RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: InkWell(
-        onLongPress: () {
-          _showEditDeleteDialog(index);
-        },
+        onLongPress: _isReorderMode
+            ? null
+            : () {
+                _showEditDeleteDialog(index);
+              },
         borderRadius: _counterShape == CounterShape.circle
             ? BorderRadius.circular(100)
             : BorderRadius.circular(16),
