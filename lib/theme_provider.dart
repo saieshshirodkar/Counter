@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'settings_screen.dart';
+import 'models/enums.dart';
 
 class ThemeProvider with ChangeNotifier {
   AppTheme _appTheme;

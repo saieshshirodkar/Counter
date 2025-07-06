@@ -5,7 +5,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'theme_provider.dart';
+import '../models/enums.dart';
+import '../theme_provider.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -13,11 +14,6 @@ class SettingsScreen extends StatefulWidget {
   @override
   State<SettingsScreen> createState() => _SettingsScreenState();
 }
-
-enum CounterShape { rectangle, circle }
-enum CounterSize { small, medium, large }
-enum CounterLayout { grid, list }
-enum AppTheme { deepPurple, teal, indigo, orange }
 
 class _SettingsScreenState extends State<SettingsScreen> {
   CounterShape _counterShape = CounterShape.rectangle;

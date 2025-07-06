@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
-import 'main.dart';
+import '../models/log.dart';
 
 class LogScreen extends StatelessWidget {
   final Log log;
