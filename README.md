@@ -1,16 +1,41 @@
-# counters_app
+# Counter
 
-A new Flutter project.
+A simple and customizable counter app built with Flutter.
+
+## Features
+
+- **Create and manage multiple counters:** Easily add, delete, and reorder your counters.
+- **Increment and decrement:** Quickly update counter values with a single tap.
+- **Set custom values:** Manually set a specific value for any counter.
+- **Customizable appearance:**
+    - Choose between rectangle and circle shapes for your counters.
+    - Adjust the size of the counters (small, medium, large).
+    - Switch between grid and list layouts.
+    - Personalize the app with different color themes.
+- **Data management:**
+    - Export your counters to a JSON file for backup.
+    - Import counters from a JSON file.
+    - Reset all counters to their initial state.
+- **Log history:** View a log of all your counter actions (increment, decrement).
 
 ## Getting Started
 
-This project is a starting point for a Flutter application.
+To get a local copy up and running, follow these simple steps.
 
-A few resources to get you started if this is your first Flutter project:
+### Prerequisites
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+- Flutter SDK: [https://flutter.dev/docs/get-started/install](https://flutter.dev/docs/get-started/install)
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+### Installation
+
+1. Clone the repo
+   ```sh
+   git clone https://github.com/saieshshirodkar/Counter.git
+   ```
+2. Install packages
+   ```sh
+   flutter pub get
+   ```
+3. Run the app
+   ```sh
+   flutter run
