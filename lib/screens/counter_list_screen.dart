@@ -402,15 +402,14 @@ class _CounterListScreenState extends State<CounterListScreen> {
       itemBuilder: (context, index) {
         return _buildCounterItem(index, key: ValueKey(_counters[index]));
       },
-      onReorder: _isReorderMode
-          ? (oldIndex, newIndex) {
-              setState(() {
-                final counter = _counters.removeAt(oldIndex);
-                _counters.insert(newIndex, counter);
-              });
-              _saveCounters();
-            }
-          : (oldIndex, newIndex) {},
+      dragEnabled: _isReorderMode,
+      onReorder: (oldIndex, newIndex) {
+        setState(() {
+          final counter = _counters.removeAt(oldIndex);
+          _counters.insert(newIndex, counter);
+        });
+        _saveCounters();
+      },
     );
   }
 
@@ -421,18 +420,17 @@ class _CounterListScreenState extends State<CounterListScreen> {
       itemBuilder: (context, index) {
         return _buildCounterItem(index, key: ValueKey(_counters[index]));
       },
-      onReorder: _isReorderMode
-          ? (oldIndex, newIndex) {
-              setState(() {
-                if (newIndex > oldIndex) {
-                  newIndex -= 1;
-                }
-                final counter = _counters.removeAt(oldIndex);
-                _counters.insert(newIndex, counter);
-              });
-              _saveCounters();
-            }
-          : (oldIndex, newIndex) {},
+      buildDefaultDragHandles: _isReorderMode,
+      onReorder: (oldIndex, newIndex) {
+        setState(() {
+          if (newIndex > oldIndex) {
+            newIndex -= 1;
+          }
+          final counter = _counters.removeAt(oldIndex);
+          _counters.insert(newIndex, counter);
+        });
+        _saveCounters();
+      },
     );
   }
 
