@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'models/enums.dart';
+import 'models/enums/app_theme.dart';
 
 class ThemeProvider with ChangeNotifier {
   AppTheme _appTheme;

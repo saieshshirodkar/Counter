@@ -1,11 +1,12 @@
-import 'dart:convert';
-import 'dart:io';
-import 'package:file_picker/file_picker.dart';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:share_plus/share_plus.dart';
+
 import 'package:shared_preferences/shared_preferences.dart';
-import '../models/enums.dart';
+import '../models/enums/app_theme.dart';
+import '../models/enums/counter_layout.dart';
+import '../models/enums/counter_shape.dart';
+import '../models/enums/counter_size.dart';
 import '../theme_provider.dart';
 
 class SettingsScreen extends StatefulWidget {
@@ -30,10 +31,26 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Future<void> _loadSettings() async {
     final prefs = await SharedPreferences.getInstance();
     setState(() {
-      _counterShape = CounterShape.values[prefs.getInt('counterShape') ?? 0];
-      _counterSize = CounterSize.values[prefs.getInt('counterSize') ?? 1];
-      _counterLayout = CounterLayout.values[prefs.getInt('counterLayout') ?? 0];
-      _appTheme = AppTheme.values[prefs.getInt('appTheme') ?? 0];
+      try {
+        _counterShape = CounterShape.values[prefs.getInt('counterShape') ?? 0];
+      } catch (e) {
+        _counterShape = CounterShape.rectangle;
+      }
+      try {
+        _counterSize = CounterSize.values[prefs.getInt('counterSize') ?? 1];
+      } catch (e) {
+        _counterSize = CounterSize.medium;
+      }
+      try {
+        _counterLayout = CounterLayout.values[prefs.getInt('counterLayout') ?? 0];
+      } catch (e) {
+        _counterLayout = CounterLayout.grid;
+      }
+      try {
+        _appTheme = AppTheme.values[prefs.getInt('appTheme') ?? 0];
+      } catch (e) {
+        _appTheme = AppTheme.deepPurple;
+      }
     });
   }
 
@@ -132,23 +149,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ],
             ),
           ),
-          const Divider(),
-          _buildSectionHeader('Data Management'),
-          ListTile(
-            title: const Text('Export Counters'),
-            leading: const Icon(Icons.upload_file),
-            onTap: _exportCounters,
-          ),
-          ListTile(
-            title: const Text('Import Counters'),
-            leading: const Icon(Icons.download),
-            onTap: _importCounters,
-          ),
-          ListTile(
-            title: const Text('Reset All Counters'),
-            leading: const Icon(Icons.delete_forever),
-            onTap: _showResetConfirmationDialog,
-          ),
+
         ],
       ),
     );
@@ -167,71 +168,5 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  void _showResetConfirmationDialog() {
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('Reset All Counters?'),
-          content: const Text('This action cannot be undone.'),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-              child: const Text('Cancel'),
-            ),
-            TextButton(
-              onPressed: () {
-                _resetCounters();
-                Navigator.of(context).pop();
-              },
-              child: const Text('Reset'),
-            ),
-          ],
-        );
-      },
-    );
-  }
 
-  Future<void> _resetCounters() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove('counters');
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('All counters have been reset.')),
-    );
-  }
-
-  Future<void> _exportCounters() async {
-    final prefs = await SharedPreferences.getInstance();
-    final String? countersString = prefs.getString('counters');
-    if (countersString != null) {
-      Share.share(countersString, subject: 'Counters Backup');
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('No counters to export.')),
-      );
-    }
-  }
-
-  Future<void> _importCounters() async {
-    final result = await FilePicker.platform.pickFiles();
-    if (result != null) {
-      try {
-        final file = File(result.files.single.path!);
-        final contents = await file.readAsString();
-        // Validate JSON
-        jsonDecode(contents);
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.setString('counters', contents);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Counters imported successfully.')),
-        );
-      } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to import counters: $e')),
-        );
-      }
-    }
-  }
 }

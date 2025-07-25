@@ -1,0 +1,1 @@
+enum CounterShape { rectangle, circle }

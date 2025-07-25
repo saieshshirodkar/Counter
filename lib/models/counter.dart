@@ -16,6 +16,10 @@ class Counter {
   }
 
   Map<String, dynamic> toJson() {
-    return {'name': name, 'value': value, 'color': color.value};
+    return {
+      'name': name,
+      'value': value,
+      'color': color.value,
+    };
   }
 }

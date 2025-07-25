@@ -1,12 +1,17 @@
 import 'dart:convert';
+import '../widgets/counter_item.dart';
+import '../widgets/add_counter_dialog.dart';
+import '../widgets/edit_delete_dialog.dart';
 import 'dart:math';
+import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
 import 'package:reorderable_grid_view/reorderable_grid_view.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/counter.dart';
-import '../models/enums.dart';
-import '../models/log.dart';
-import 'log_screen.dart';
+import '../models/enums/counter_layout.dart';
+import '../models/enums/counter_shape.dart';
+import '../models/enums/counter_size.dart';
+
 import 'settings_screen.dart';
 
 class CounterListScreen extends StatefulWidget {
@@ -16,10 +21,11 @@ class CounterListScreen extends StatefulWidget {
   State<CounterListScreen> createState() => _CounterListScreenState();
 }
 
-class _CounterListScreenState extends State<CounterListScreen> {
+class _CounterListScreenState extends State<CounterListScreen>
+    with WidgetsBindingObserver {
   final GlobalKey<AnimatedListState> _listKey = GlobalKey<AnimatedListState>();
   List<Counter> _counters = [];
-  Log _log = Log();
+  
   final List<Color> _presetColors = [
     Colors.red,
     Colors.green,
@@ -33,10 +39,25 @@ class _CounterListScreenState extends State<CounterListScreen> {
   bool _isReorderMode = false;
 
   @override
+  @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _loadCounters();
     _loadSettings();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.paused) {
+      _saveCounters();
+    }
   }
 
   Future<void> _loadSettings() async {
@@ -53,19 +74,18 @@ class _CounterListScreenState extends State<CounterListScreen> {
     final prefs = await SharedPreferences.getInstance();
     final String? countersString = prefs.getString('counters');
     if (countersString != null) {
-      final List<dynamic> countersJson = jsonDecode(countersString);
-      setState(() {
-        _counters =
-            countersJson.map((json) => Counter.fromJson(json)).toList();
-      });
+      try {
+        final List<dynamic> countersJson = jsonDecode(countersString);
+        setState(() {
+          _counters =
+              countersJson.map((json) => Counter.fromJson(json)).toList();
+        });
+      } catch (e) {
+        // Handle error, maybe show a dialog to the user
+        print('Error loading counters: $e');
+      }
     }
-    final String? logString = prefs.getString('log');
-    if (logString != null) {
-      final Map<String, dynamic> logJson = jsonDecode(logString);
-      setState(() {
-        _log = Log.fromJson(logJson);
-      });
-    }
+
   }
 
   Future<void> _saveCounters() async {
@@ -74,8 +94,7 @@ class _CounterListScreenState extends State<CounterListScreen> {
       _counters.map((counter) => counter.toJson()).toList(),
     );
     await prefs.setString('counters', countersString);
-    final String logString = jsonEncode(_log.toJson());
-    await prefs.setString('log', logString);
+
   }
 
   void _addCounter(String name, Color color) {
@@ -90,28 +109,15 @@ class _CounterListScreenState extends State<CounterListScreen> {
   void _incrementCounter(int index) {
     setState(() {
       _counters[index].value++;
-      _log.add(
-        LogEntry(
-          counterName: _counters[index].name,
-          action: 'increment',
-          timestamp: DateTime.now(),
-        ),
-      );
+
     });
-    _saveCounters();
   }
 
   void _decrementCounter(int index) {
     setState(() {
       if (_counters[index].value > 0) {
         _counters[index].value--;
-        _log.add(
-          LogEntry(
-            counterName: _counters[index].name,
-            action: 'decrement',
-            timestamp: DateTime.now(),
-          ),
-        );
+
       }
     });
     _saveCounters();
@@ -126,7 +132,16 @@ class _CounterListScreenState extends State<CounterListScreen> {
       index,
       (context, animation) => SizeTransition(
         sizeFactor: animation,
-        child: _buildCounterItem(index, counter: removedCounter),
+        child: CounterItem(
+          key: ValueKey(removedCounter),
+          counter: removedCounter,
+          counterShape: _counterShape,
+          isReorderMode: _isReorderMode,
+          onIncrement: () {},
+          onDecrement: () {},
+          onSet: () {},
+          onEdit: () {},
+        ),
       ),
     );
     _saveCounters();
@@ -140,69 +155,13 @@ class _CounterListScreenState extends State<CounterListScreen> {
   }
 
   void _showAddCounterDialog() {
-    final TextEditingController controller = TextEditingController();
-    Color selectedColor = _presetColors[Random().nextInt(_presetColors.length)];
-
     showDialog(
       context: context,
       builder: (context) {
-        return StatefulBuilder(
-          builder: (context, setState) {
-            return AlertDialog(
-              title: const Text('Add New Counter'),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  TextField(
-                    controller: controller,
-                    decoration: const InputDecoration(
-                      hintText: 'Counter Name',
-                      border: OutlineInputBorder(),
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                  const Text('Select a Color'),
-                  const SizedBox(height: 8),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: _presetColors.map((color) {
-                      return GestureDetector(
-                        onTap: () {
-                          setState(() {
-                            selectedColor = color;
-                          });
-                        },
-                        child: CircleAvatar(
-                          backgroundColor: color,
-                          radius: 22,
-                          child: selectedColor == color
-                              ? const Icon(Icons.check, color: Colors.white)
-                              : null,
-                        ),
-                      );
-                    }).toList(),
-                  ),
-                ],
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () {
-                    Navigator.of(context).pop();
-                  },
-                  child: const Text('Cancel'),
-                ),
-                TextButton(
-                  onPressed: () {
-                    if (controller.text.isNotEmpty) {
-                      _addCounter(controller.text, selectedColor);
-                      Navigator.of(context).pop();
-                    }
-                  },
-                  child: const Text('Add'),
-                ),
-              ],
-            );
-          },
+        return AddCounterDialog(
+          onAdd: _addCounter,
+          existingCounters: _counters,
+          presetColors: _presetColors,
         );
       },
     );
@@ -259,7 +218,7 @@ class _CounterListScreenState extends State<CounterListScreen> {
             TextButton(
               onPressed: () {
                 final int? value = int.tryParse(controller.text);
-                if (value != null) {
+                if (value != null && value >= 0) {
                   _setCounterValue(index, value);
                   Navigator.of(context).pop();
                 }
@@ -276,39 +235,16 @@ class _CounterListScreenState extends State<CounterListScreen> {
     showDialog(
       context: context,
       builder: (context) {
-        return AlertDialog(
-          title: Text(_counters[index].name),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              ListTile(
-                leading: const Icon(Icons.edit),
-                title: const Text('Edit'),
-                onTap: () {
-                  Navigator.of(context).pop();
-                  _showSetCounterDialog(index);
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.delete),
-                title: const Text('Delete'),
-                onTap: () {
-                  Navigator.of(context).pop();
-                  _showDeleteConfirmationDialog(index);
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.reorder),
-                title: const Text('Reorder'),
-                onTap: () {
-                  Navigator.of(context).pop();
-                  setState(() {
-                    _isReorderMode = true;
-                  });
-                },
-              ),
-            ],
-          ),
+        return EditDeleteDialog(
+          counterName: _counters[index].name,
+          onEdit: () => _showSetCounterDialog(index),
+          onDelete: () => _showDeleteConfirmationDialog(index),
+          onReorder: () {
+            HapticFeedback.mediumImpact();
+            setState(() {
+              _isReorderMode = true;
+            });
+          },
         );
       },
     );
@@ -335,15 +271,7 @@ class _CounterListScreenState extends State<CounterListScreen> {
                 ),
               ]
             : [
-                IconButton(
-                  icon: const Icon(Icons.history),
-                  onPressed: () {
-                    Navigator.of(context).push(
-                      MaterialPageRoute(
-                          builder: (context) => LogScreen(log: _log)),
-                    );
-                  },
-                ),
+
                 IconButton(
                   icon: const Icon(Icons.settings),
                   onPressed: () {
@@ -400,7 +328,17 @@ class _CounterListScreenState extends State<CounterListScreen> {
       ),
       itemCount: _counters.length,
       itemBuilder: (context, index) {
-        return _buildCounterItem(index, key: ValueKey(_counters[index]));
+        final counter = _counters[index];
+        return CounterItem(
+          key: ValueKey(counter),
+          counter: counter,
+          counterShape: _counterShape,
+          isReorderMode: _isReorderMode,
+          onIncrement: () => _incrementCounter(index),
+          onDecrement: () => _decrementCounter(index),
+          onSet: () => _showSetCounterDialog(index),
+          onEdit: () => _showEditDeleteDialog(index),
+        );
       },
       dragEnabled: _isReorderMode,
       onReorder: (oldIndex, newIndex) {
@@ -418,7 +356,17 @@ class _CounterListScreenState extends State<CounterListScreen> {
       padding: const EdgeInsets.all(8.0),
       itemCount: _counters.length,
       itemBuilder: (context, index) {
-        return _buildCounterItem(index, key: ValueKey(_counters[index]));
+        final counter = _counters[index];
+        return CounterItem(
+          key: ValueKey(counter),
+          counter: counter,
+          counterShape: _counterShape,
+          isReorderMode: _isReorderMode,
+          onIncrement: () => _incrementCounter(index),
+          onDecrement: () => _decrementCounter(index),
+          onSet: () => _showSetCounterDialog(index),
+          onEdit: () => _showEditDeleteDialog(index),
+        );
       },
       buildDefaultDragHandles: _isReorderMode,
       onReorder: (oldIndex, newIndex) {
@@ -434,78 +382,5 @@ class _CounterListScreenState extends State<CounterListScreen> {
     );
   }
 
-  Widget _buildCounterItem(int index, {Counter? counter, Key? key}) {
-    final currentCounter = counter ?? _counters[index];
-    return Card(
-      key: key,
-      color: currentCounter.color.withOpacity(0.2),
-      shape: _counterShape == CounterShape.circle
-          ? const CircleBorder()
-          : RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: InkWell(
-        onLongPress: _isReorderMode
-            ? null
-            : () {
-                _showEditDeleteDialog(index);
-              },
-        borderRadius: _counterShape == CounterShape.circle
-            ? BorderRadius.circular(100)
-            : BorderRadius.circular(16),
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    currentCounter.name,
-                    style: const TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox.shrink(),
-                ],
-              ),
-              Expanded(
-                child: Center(
-                  child: GestureDetector(
-                    onDoubleTap: () => _showSetCounterDialog(index),
-                    child: FittedBox(
-                      fit: BoxFit.contain,
-                      child: Text(
-                        '${currentCounter.value}',
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 60,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  IconButton(
-                    icon: const Icon(Icons.remove),
-                    onPressed: () => _decrementCounter(index),
-                    splashRadius: 24,
-                  ),
-                  const SizedBox(width: 32),
-                  IconButton(
-                    icon: const Icon(Icons.add),
-                    onPressed: () => _incrementCounter(index),
-                    splashRadius: 24,
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
+
 }

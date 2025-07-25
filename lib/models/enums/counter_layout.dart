@@ -1,0 +1,1 @@
+enum CounterLayout { grid, list }

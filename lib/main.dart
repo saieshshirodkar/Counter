@@ -2,15 +2,20 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'models/enums.dart';
+import 'models/enums/app_theme.dart';
 import 'screens/counter_list_screen.dart';
 import 'theme_provider.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   final prefs = await SharedPreferences.getInstance();
-  final themeIndex = prefs.getInt('appTheme') ?? 0;
-  final appTheme = AppTheme.values[themeIndex];
+  AppTheme appTheme;
+  try {
+    final themeIndex = prefs.getInt('appTheme') ?? 0;
+    appTheme = AppTheme.values[themeIndex];
+  } catch (e) {
+    appTheme = AppTheme.deepPurple; // Default theme on error
+  }
   runApp(
     ChangeNotifierProvider(
       create: (_) => ThemeProvider(appTheme),

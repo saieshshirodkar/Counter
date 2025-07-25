@@ -39,8 +39,7 @@ dependencies:
   universal_html: ^2.2.4
   intl: ^0.20.2
   flutter_staggered_animations: ^1.1.1
-  share_plus: ^11.0.0
-  file_picker: ^10.2.0
+
   flutter_launcher_icons: ^0.14.4
   provider: ^6.0.5
   reorderable_grid_view: ^2.2.6
@@ -55,7 +54,7 @@ dev_dependencies:
   # activated in the `analysis_options.yaml` file located at the root of your
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
-  flutter_lints: ^5.0.0
+  flutter_lints: ^6.0.0
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
